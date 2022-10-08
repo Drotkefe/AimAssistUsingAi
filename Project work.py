@@ -29,8 +29,6 @@ while True:
     img=np.array(sct.grab(monitor))
     result=model(img)
     rl=result.xyxy[0].tolist()
-    #print(Closest_enemy(rl))
-    #print(win32api.GetCursorPos())
     center=()
     if len(rl)>0:
         if rl[0][5]==1:
