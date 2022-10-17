@@ -31,7 +31,6 @@ def Closest_enemy_head(list):
             distance.append(math.sqrt((center[0]-w/2)**2+(center[1]-h/2)**2))
     if len(centers)==0:
         return
-    print("fejlövés")
     return centers[distance.index(min(distance,default=None))]
 
 def Closest_enemy(list):
