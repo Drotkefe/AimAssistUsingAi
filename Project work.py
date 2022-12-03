@@ -130,7 +130,7 @@ else:
     print("jó lesz neked a cpu is")
 
 
-model=torch.hub.load('ultralytics/yolov5','custom',path='C:/Users/User/Desktop/aim/best.pt')
+model=torch.hub.load('ultralytics/yolov5','custom',path='best.pt')
 
 with mss.mss() as sct:
     monitor = {"top": y+300, "left": x+620, "width": 680, "height": 480}
