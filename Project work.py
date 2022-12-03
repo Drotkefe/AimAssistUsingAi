@@ -1,45 +1,44 @@
 import time
 import math
-from turtle import distance, width
 import win32api
-import keyboard
 import cv2
 import mss
 import numpy as np
 import torch
+from win32gui import FindWindow, GetWindowRect
+import random
+import threading
+import multiprocessing
 
-def Closest_enemy_head(list):
-    pos=win32api.GetCursorPos()
-    centers=[]
-    distance=[]
-    for i in list:
-        if i[5]==1:
-            width=i[2]-i[0]
-            height=i[3]-i[1]
-            center=(i[2]-width/2,i[3]-height/2)
-            centers.append(center)
-            distance.append(math.sqrt((center[0]-pos[0])**2+(center[1]-pos[1])**2))
-    return centers[distance.index(min(distance,default=None))]
+
+def get_window_geometry(name):
+    window_handle = FindWindow(None, name)
+    window_rect   = GetWindowRect(window_handle)
+    return window_rect
+
+x, y, w, h=get_window_geometry("Counter-Strike: Global Offensive - Direct3D 9")
+
+
 
 def Closest_enemy(list):
-    pos=win32api.GetCursorPos()
     centers=[]
     distance=[]
     for i in list:
         if i[5]==0 and i[4]>0.7:
             width=i[2]-i[0]
             height=i[3]-i[1]
-            center=(i[2]-width/2,i[3]-height/2)
+            center=(int(i[2]-width/2),int((i[3]-height*0.85)))
             centers.append(center)
-            distance.append(math.sqrt((center[0]-pos[0])**2+(center[1]-pos[1])**2))
+            distance.append(math.sqrt((center[0]-w/2)**2+(center[1]-h/2)**2))
+    if len(centers)==0:
+        return
     return centers[distance.index(min(distance,default=None))]
 
-
 sqrt3 = np.sqrt(3)
-sqrt5 = np.sqrt(5) 
-def wind_mouse(start_x, start_y, dest_x, dest_y, G_0=9, W_0=3, M_0=15, D_0=12, move_mouse=lambda x,y: None):
+sqrt5 = np.sqrt(5)
+def wind_mouse(start_x, start_y, dest_x, dest_y, G_0=9, W_0=2, M_0=3, D_0=12):
     '''
-    WindMouse algorithm. Calls the move_mouse kwarg with each new step.
+    WindMouse algorithm. Calls the move_mouse with each new step.
     Released under the terms of the GPLv3 license.
     G_0 - magnitude of the gravitational fornce
     W_0 - magnitude of the wind force fluctuations
@@ -73,38 +72,104 @@ def wind_mouse(start_x, start_y, dest_x, dest_y, G_0=9, W_0=3, M_0=15, D_0=12, m
         move_y = int(np.round(start_y))
         if current_x != move_x or current_y != move_y:
             #This should wait for the mouse polling interval
-            #move_mouse(current_x:=move_x,current_y:=move_y)
-            win32api.mouse_event(0x0001,move_x,move_y)
-    #return current_x,current_y
-    
+            for i in range(1500):
+                pass
+            win32api.mouse_event(0x0001,int(v_x),int(v_y))
+            
+    return current_x,current_y
 
 
-model=torch.hub.load('ultralytics/yolov5','custom',path='C:/Users/Patrik/Desktop/best.pt')
+
+def mouse_move_2(rl):
+    dest=Closest_enemy(rl)
+    if(dest!=None):
+       dist=[int(dest[0])-int(w/2),int(dest[1])-int(h/2)]
+       win32api.mouse_event(0x0001,dist[0],dist[1])
+
+def mouse_move(dest): # ~0.22-0.13 sec
+    dist=[int(dest[0])-int(w/2),int(dest[1])-int(h/2)]
+    print("---")
+    for i in range(1,50):
+        print(dist,"distance")
+        if ((math.sqrt(dist[0]**2+dist[1]**2))<5 ):
+            break
+        x=int((dist[0]*i/random.randint(50,60)))
+        y=int((dist[1]*i/random.randint(50,60)))
+        print(x,y)
+        win32api.mouse_event(0x0001,x,y)
+        dist[0]-=x
+        dist[1]-=y
+        for i in range(5000): #slow down between steps => time.sleep() is too slow 
+            pass
+    win32api.mouse_event(0x0001,dist[0],dist[1])
+
+def mouse_move_1(dest):
+    dist=[int(dest[0])-int(w/2),int(dest[1])-int(h/2)]
+    print("---")
+    for i in range(50):
+        print(dist,"distance")
+        if ((math.sqrt(dist[0]**2+dist[1]**2))<3 ):
+            break
+        if(dist[0]!=0 and dist[1]!=0):
+            x=int(abs(dist[0])/dist[0])
+            y=int(abs(dist[1])/dist[1])
+        elif(dist[0]==0):
+            x=0
+            y=int(abs(dist[1])/dist[1])
+        elif(dist[1]==0):
+            x=int(abs(dist[0])/dist[0])
+            y=0
+        
+        print(x,y)
+        win32api.mouse_event(0x0001,x,y)
+        dist[0]-=x
+        dist[1]-=y
+        
+
+       
+        
+
+
+if (torch.cuda.is_available()):
+    print(torch.cuda.get_device_name(0))
+else:
+    print("jó lesz neked a cpu is")
+
+
+model=torch.hub.load('ultralytics/yolov5','custom',path='C:/Users/User/Desktop/aim/best.pt')
 
 with mss.mss() as sct:
-    monitor = {"top": 0, "left": 0, "width": 960, "height": 540}
+    monitor = {"top": y+300, "left": x+620, "width": 680, "height": 480}
 
-while True:
-    img=np.array(sct.grab(monitor))
-    result=model(img)
-    rl=result.xyxy[0].tolist()
-    center=()
-    if len(rl)>0:
-        # width=rl[2]-rl[0]
-        # height=rl[3]-rl[1]
-        # center=(int(rl[2]-width/2),int(rl[3]-height/2))
-        # mouse_loc=win32api.GetCursorPos()
-        print(Closest_enemy_head(rl))
+w=680
+h=480
+
+
+def Aimbot():
+    fps=[]
+    while True:
+        last_time=time.time()
+        img=np.array(sct.grab(monitor))
+        result=model(img)
+        rl=result.xyxy[0].tolist()
+        if len(rl)>0:
+            dest=Closest_enemy(rl)
+            if dest!=None and np.hypot(dest[0]-w/2,dest[1]-h/2) > 5:
+                wind_mouse(w/2,h/2,dest[0],dest[1])
+                #x=threading.Thread(target=wind_mouse,args=(w/2,h/2,dest[0],dest[1]))
+                #x.start()
+
         
-        #wind_mouse(mouse_loc[0],mouse_loc[1],center[0],center[1])
-            # distance=Closest_enemy(rl)
-            #laci=cv2.line(np.squeeze(result.render()),win32api.GetCursorPos(),center,color=(0,255,0),thickness=3)
-            #cv2.imshow('sad',laci)
-    time.sleep(1.5)
-    cv2.imshow('debug',np.squeeze(result.render()))
-    cv2.waitKey(1)
-    if keyboard.is_pressed('q'):
-        break
-cv2.destroyAllWindows()
+        #cv2.imshow('debug',np.squeeze(result.render()))
+        #print("fps: {}".format(1 / (time.time() - last_time)))
+        fps.append(1/(time.time() - last_time))
+        if(len(fps)>100):
+            print(sum(fps)/len(fps))
+            fps=[]
+        #cv2.waitKey(1)
+
+Aimbot()
+
+
 
     
