@@ -1,3 +1,4 @@
+
 import time
 import math
 import win32api
@@ -76,9 +77,6 @@ def wind_mouse(start_x, start_y, dest_x, dest_y, G_0=9, W_0=2, M_0=3, D_0=12):
                 pass
             win32api.mouse_event(0x0001,int(v_x),int(v_y))
             
-    return current_x,current_y
-
-
 
 def mouse_move_2(rl):
     dest=Closest_enemy(rl)
@@ -126,10 +124,6 @@ def mouse_move_1(dest):
         dist[1]-=y
         
 
-       
-        
-
-
 if (torch.cuda.is_available()):
     print(torch.cuda.get_device_name(0))
 else:
@@ -162,14 +156,10 @@ def Aimbot():
         
         #cv2.imshow('debug',np.squeeze(result.render()))
         #print("fps: {}".format(1 / (time.time() - last_time)))
-        fps.append(1/(time.time() - last_time))
-        if(len(fps)>100):
-            print(sum(fps)/len(fps))
-            fps=[]
         #cv2.waitKey(1)
 
 Aimbot()
 
 
 
-    
+
